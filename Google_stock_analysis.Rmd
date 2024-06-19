@@ -1,0 +1,106 @@
+---
+title: "Assignment_6"
+author: "Raj Motwani"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+
+```{r ARIMA}
+library(fpp)
+library(fpp2)
+library(forecast)
+library(readxl)
+library(readr)
+#library(readcsv)
+
+#google_stock_data_excel <- read_csv("/Users/raj/Downloads/google-stock-dataset-Monthly_data.csv")
+
+google_stock_data_excel <- read_excel("/Users/raj/Downloads/google-stock-dataset-Monthly_data.xlsx")
+#View(google_stock_data_excel)
+
+attributes(google_stock_data_excel)
+plot(x=google_stock_data_excel$Date, y=google_stock_data_excel$Price,type="l",xlab="Date",ylab="Price")
+print("This is a line graph that is showing the price of Google's share on January 1st, 2015 till April 1st,2023")
+
+#ACF
+Acf(google_stock_data_excel$Price,main="ACF")
+print("ACF is a statistical function that measures the autocorrelation of a time series data set at different lags ")
+
+#Convert into time series 
+ts_data_2 <- ts(google_stock_data_excel$Price, start = c(2015, 1),end = c(2023, 3), frequency = 12)
+
+#Mean forecast
+mean_forecast <- meanf(ts_data_2,5)
+plot(mean_forecast)
+print("Simple mean forecast is making a basic prediction in time series analysis. In our case, the mean forecasted value of Google's share price is around 75$")
+
+#Naive Forecast
+naive_forecast <- naive(ts_data_2,5)
+plot(naive_forecast)
+print("Naive Forecast assumes that the future values in a time series will be the same as the most recent observed value. In our case, the most recent value that is 102$ is predicted by this method")
+
+rwf_forecast <- rwf(ts_data_2,5)
+rwf_forecast <- rwf(ts_data_2,5, drift=TRUE)
+print(" A random walk model is a simple time series forecasting model where each future value is assumed to be equal to the last observed value plus a random error.")
+
+
+# Seasonal Naive
+snaive_forecast <- snaive(ts_data_2,5)
+
+
+
+MA5_forecast <- ma(ts_data_2,order=5)
+MA9_forecast <- ma(ts_data_2,order=9)
+print(" Moving averages are commonly used in time series analysis to smooth out data and identify trends or patterns.")
+
+
+# Plot the time series and different model forecasts in one chart
+plot(mean_forecast)
+lines(naive_forecast$mean,col="red")
+lines(rwf_forecast$mean,col="green")
+lines(snaive_forecast$mean,col="plum")
+lines(MA5_forecast,col = "pink")
+lines(MA9_forecast,col = "blue")
+print("According to above graph, the predictions of methods such as Naive Forecast (Red) predicts the next possible value almost same as the most recent value. The rwf forecast (Green) predicts almost the same data as the Naive method. Snaive method (Plum) is repeating the value for future's season and it shows that the stock price will go up in the future. The Moving Average Data(MA) forecast is showing the trend of stock price with very limited errors")
+
+
+attributes(naive_forecast)
+ets_forecast <- ets(ts_data_2)
+plot(ets_forecast)
+print("In a time series of stock market data, the slope component indicate whether price is increasing, decreasing, or remaining relatively stable over time. So, in this graph the slope is increased in the end of 2021 due to hike in prices. Level represents the central tendency of data")
+
+attributes(ets_forecast)
+ets_forecast$mse
+
+#HoltWinters Prediction
+google_stock_data_excel$Date <- as.Date(google_stock_data_excel$Date, format = "%d-%m-%Y")
+ts_data <- ts(ts_data_2, start = c(2015, 1),end=c(2023, 4), frequency = 12)
+HW_forecast <- HoltWinters(ts_data)
+plot(HW_forecast)
+print("In HW forecast, it shows forecasing with very minor errors errors. It includes three components: level, trend, and seasonality.")
+
+price_data <- ts_data_2
+price_time_series <- ts(price_data, frequency = 12, start = c(2015, 1))
+SSE_Simple <- HoltWinters(price_time_series,beta=FALSE,gamma=FALSE)
+attributes(SSE_Simple)
+plot(SSE_Simple)
+SSE_Simple$SSE
+head(SSE_Simple$fitted)
+
+forecast_ets_1 <- forecast.ets(ets_forecast, h=5)
+plot(forecast_ets_1)
+forecast_ets_2 <- forecast(ets_forecast, h=5)
+plot(forecast_ets_2)
+print("Forecast from the above trend shows that the share will go slightly down in the next month considering the market remains as it was in last five years")
+
+
+#Pick an accuracy measure, compare your models, and state the best model based on the accuracy comparison
+accuracy(naive_forecast)
+accuracy(rwf_forecast)
+accuracy(ets_forecast)
+#accuracy(HW_forecast)
+print("According to the accuracy results, I assume that the rwf predictions are more accurate since their mean is close to 0 and all other erros also have their data closer to 0")
+
+```
